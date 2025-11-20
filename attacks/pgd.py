@@ -4,7 +4,10 @@ from torch_dct import dct_2d, idct_2d
 
 def pgd_l2_attack(model, x, epsilon, alpha=0.01, steps=40):
     x, pth = x
-    x_adv = x.clone().detach()
+    # Initialize with random noise to break symmetry (avoid 0 gradient at distance 0)
+    # For L2, we can just add small noise.
+    noise = torch.zeros_like(x).uniform_(-1e-3, 1e-3)
+    x_adv = (x + noise).clamp(0, 1).detach()
     
     with torch.no_grad():
         emb_clean = model.get_embeddings(x).detach()  # [B, D]
@@ -14,7 +17,7 @@ def pgd_l2_attack(model, x, epsilon, alpha=0.01, steps=40):
         
         # Forward pass
         emb_adv = model.get_embeddings(x_adv)  # [B, D]
-        loss = -1 * F.mse_loss(emb_adv, emb_clean)
+        loss = F.mse_loss(emb_adv, emb_clean)
         print(loss)
         
         # Backward pass
@@ -38,9 +41,11 @@ def pgd_l2_attack(model, x, epsilon, alpha=0.01, steps=40):
     return x_adv.detach(), pth
 
 def pgd_l2_attack_dct(model, x, epsilon, alpha=0.01, steps=40):
-    
     x, pth = x
-    x_adv = dct_2d(x)  # Use dct_2d for 2D images
+    # Initialize with random noise in DCT domain
+    x_dct = dct_2d(x)
+    noise = torch.zeros_like(x_dct).uniform_(-1e-3, 1e-3)
+    x_adv = (x_dct + noise).detach()
      
     with torch.no_grad():
         emb_clean = model.get_embeddings(x)  # [B, D]
@@ -53,7 +58,7 @@ def pgd_l2_attack_dct(model, x, epsilon, alpha=0.01, steps=40):
         emb_adv = model.get_embeddings(x_adv_pixel) # [B, D]
 
         # Apply temperature scaling
-        loss = -1 * F.mse_loss(emb_adv, emb_clean)
+        loss = F.mse_loss(emb_adv, emb_clean)
         print(loss)
         loss.backward()
         
