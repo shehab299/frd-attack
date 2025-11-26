@@ -17,8 +17,7 @@ def pgd_l2_attack(model, x, epsilon, alpha=0.01, steps=40):
         
         # Forward pass
         emb_adv = model.get_embeddings(x_adv)  # [B, D]
-        loss = F.mse_loss(emb_adv, emb_clean)
-        print(loss)
+        loss = torch.norm(emb_adv - emb_clean)
         
         # Backward pass
         loss.backward()
@@ -58,8 +57,7 @@ def pgd_l2_attack_dct(model, x, epsilon, alpha=0.01, steps=40):
         emb_adv = model.get_embeddings(x_adv_pixel) # [B, D]
 
         # Apply temperature scaling
-        loss = F.mse_loss(emb_adv, emb_clean)
-        print(loss)
+        loss = torch.norm(emb_adv - emb_clean)
         loss.backward()
         
         with torch.no_grad():

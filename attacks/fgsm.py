@@ -23,12 +23,9 @@ def fgsm_l2_attack(model, x, epsilon):
 
     # Forward pass for adversarial embeddings (keeps grad)
     emb_adv = model.get_embeddings(x_adv)
-    print(emb_adv, emb_clean)
 
     # L2 loss to maximize
-    loss = F.mse_loss(emb_adv, emb_clean)
-    print(loss)
-
+    loss = torch.norm(emb_adv - emb_clean)
     loss.backward()
 
     # FGSM step
@@ -65,7 +62,7 @@ def fgsm_l2_attack_dct(model, x, epsilon, temp=0.5, save_dir=None):
 
     emb_adv = model.get_embeddings(x_adv_pixel) # [B, D]
 
-    loss = F.mse_loss(emb_adv, emb_clean)
+    loss = torch.norm(emb_adv - emb_clean)
     loss.backward()
 
     # Extract gradient and detach from computation graph
